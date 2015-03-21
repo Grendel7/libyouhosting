@@ -1,5 +1,5 @@
 {
-  "name": "i7Grendel/libyouhosting",
+  "name": "i7grendel/libyouhosting",
   "type": "library",
   "description": "PHP Wrapper around the official REST API provided by YouHosting",
   "license": "BSD-3",
