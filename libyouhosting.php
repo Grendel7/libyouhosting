@@ -249,8 +249,8 @@ class YouHosting {
 
         for($i = $page; $i <= $totalPages; $i++){
             $url = "/v1/account/list?page=".$i;
-            if(!empty($client_ip)){
-                $url .= "&client_ip=".$client_id;
+            if(!empty($client_id)){
+                $url .= "&client_id=".$client_id;
             }
 
             $data = $this->get($url);
