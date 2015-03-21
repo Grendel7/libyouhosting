@@ -1,0 +1,24 @@
+{
+  "name": "i7Grendel/libyouhosting",
+  "type": "library",
+  "description": "PHP Wrapper around the official REST API provided by YouHosting",
+  "license": "BSD-3",
+  "authors": [
+    {
+      "name": "Hans",
+      "email": "hans@grendelhosting.com"
+    }
+  ],
+  "keywords": [
+    "youhosting",
+    "rest"
+  ],
+  "require": {
+    "php": ">=5.0.0"
+  },
+  "autoload": {
+    "classmap": [
+      "libyouhosting.php"
+    ]
+  }
+}

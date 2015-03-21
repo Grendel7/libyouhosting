@@ -14,22 +14,22 @@ class YouHosting {
      * Create a new YouHosting object
      * @param string $apikey your YouHosting API key
      * @param array $config an array with configuration values: {continueIfNoResponse: true/false}
-     * @param bool $continueIfNoResponse boolean to determine what should be done when there is no response from YouHosting (which happens and is usually safe to ignore)
      */
-    public function __construct($apikey, $config){
+    public function __construct($apikey, $config = array()){
         $this->apikey = $apikey;
         $this->config = array_merge($this->config, $config);
     }
 
     /**
      * Perform a GET request
-     * @param $url the URL to request
+     * @param $url string the URL to request
+     * @param $params array (optional) GET values to pass
      * @return mixed the result json data
      * @throws YouHostingException if the connection fails, this exception is thrown
      */
-    private function get($url){
+    private function get($url, $params = null){
         do {
-            $ch = curl_init($this->host . $url);
+            $ch = curl_init($this->host . $url . (!empty($params) ? "?".http_build_query($params) : ""));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_USERPWD, "reseller:" . $this->apikey);
@@ -53,8 +53,8 @@ class YouHosting {
 
     /**
      * Perform a POST request
-     * @param $url the URL to request
-     * @param $data (optional) post data to add
+     * @param $url string the URL to request
+     * @param $data array (optional) post data to add
      * @return mixed the result json data
      * @throws YouHostingException if the connection fails, this exception is thrown
      */
@@ -88,7 +88,7 @@ class YouHosting {
 
     /**
      * Perform a DELETE request
-     * @param $url the URL to request
+     * @param $url string the URL to request
      * @return mixed the result json data
      * @throws YouHostingException if the connection fails, this exception is thrown
      */
@@ -119,7 +119,7 @@ class YouHosting {
 
     /**
      * Checks the connection to the API server
-     * @return bool whether the connection was succesful
+     * @return bool whether the connection was successful
      * @throws YouHostingException
      */
     public function ping(){
@@ -128,7 +128,7 @@ class YouHosting {
 
     /**
      * Create a new client
-     * @param $data an array of data, containing {first_name, email, password, captcha_id}
+     * @param $data array an array of data, containing {first_name, email, password, captcha_id}
      * @return int the ID of the new client
      * @throws YouHostingException
      */
@@ -139,14 +139,15 @@ class YouHosting {
     /**
      * List all clients of the reseller
      *
-     * WARNING: don't use this if you have a lot of clients, there is a connection limit which can break an import of many accounts
+     * WARNING: the connection limiter may break this when used with a larger reseller account. I'm still looking for a way to work around this in a user friendly fashion.
+     * If you have any suggestions, send them to hans@grendelhosting.com
      *
      * @param int $page (optional) if you don't want to start at page one (to resume a partially completed pull)
      * @return array an array of clients
      * @throws YouHostingException
      */
     public function clientList($page = 1){
-        return $this->get("/v1/client/list?page=".$i);
+        //return $this->get("/v1/client/list?page=".$page);
 
         $totalPages = PHP_INT_MAX;
         $clients = array();
@@ -164,8 +165,7 @@ class YouHosting {
 
     /**
      * List all clients of the reseller
-     * This particular
-     *
+     * This particular version uses a callable instead of collection a list and returning that
      *
      * @param callable $userFunction a function which can process an array of clients
      * @throws YouHostingException
@@ -184,7 +184,7 @@ class YouHosting {
 
     /**
      * Get the details of a client
-     * @param $client_id the ID of the client
+     * @param $client_id int the ID of the client
      * @return array
      * @throws YouHostingException
      */
@@ -219,12 +219,12 @@ class YouHosting {
             $postdata['subdomain'] = $subdomain;
         }
 
-        return $this->post($url, $postdata);
+        return $this->get("/v1/account/check", $postdata);
     }
 
     /**
      * Create a new account
-     * @param $data account data {client_id, captcha_id, plan_id, type (see accountCheck), domain (see accountCheck), subdomain (see accountCheck), password }
+     * @param $data array account data {client_id, captcha_id, plan_id, type (see accountCheck), domain (see accountCheck), subdomain (see accountCheck), password, client_ip }
      * @return mixed
      * @throws YouHostingException
      */
@@ -234,8 +234,12 @@ class YouHosting {
 
     /**
      * Get a list of account data
+     *
+     * WARNING: the connection limiter may break this when used with a larger reseller account. I'm still looking for a way to work around this in a user friendly fashion.
+     * If you have any suggestions, send them to hans@grendelhosting.com
+     *
      * @param int $page (optional) if you don't want to start at page one (to resume a partially completed pull)
-     * @param null $client_id (optional) if you want to get the accounts for a specific client, you can specify a client id
+     * @param int $client_id (optional) if you want to get the accounts for a specific client, you can specify a client id
      * @return array a list of accounts
      * @throws YouHostingException
      */
@@ -249,11 +253,7 @@ class YouHosting {
                 $url .= "&client_ip=".$client_id;
             }
 
-            try{
-                $data = $this->get($url);
-            } catch (YouHostingException $e){
-                throw $e;
-            }
+            $data = $this->get($url);
 
             $totalPages = $data->pages;
 
@@ -265,7 +265,7 @@ class YouHosting {
 
     /**
      * get the details of an account
-     * @param $account_id an account id
+     * @param $account_id int an account id
      * @return array
      * @throws YouHostingException
      */
@@ -275,7 +275,7 @@ class YouHosting {
 
     /**
      * suspend an account
-     * @param $account_id
+     * @param $account_id int
      * @return bool whether the action was successful
      * @throws YouHostingException
      */
@@ -287,7 +287,7 @@ class YouHosting {
 
     /**
      * unsuspend an account
-     * @param $account_id
+     * @param $account_id int
      * @return bool whether the action was successful
      * @throws YouHostingException
      */
@@ -299,7 +299,7 @@ class YouHosting {
 
     /**
      * Get a one time URL to login to the account
-     * @param $account_id
+     * @param $account_id int
      * @return string
      * @throws YouHostingException
      */
@@ -309,6 +309,10 @@ class YouHosting {
 
     /**
      * delete the account
+     *
+     * WARNING: last time I tested this, it didn't do anything regardless of the status of the account.
+     * Also, you cannot delete free accounts which have been created through the API (THANKS youhosting)
+     *
      * @param $account_id
      * @return bool
      * @throws YouHostingException
@@ -319,24 +323,29 @@ class YouHosting {
 
     /**
      * Get a new captcha
+     * @param string $client_ip the IP of the requester
      * @return array a response array containing an id and url
      * @throws YouHostingException
      */
-    public function newCaptcha(){
-        return $this->post("/v1/captcha");
+    public function captchaGet($client_ip){
+        return $this->post("/v1/captcha", array(
+            'client_ip' => $client_ip,
+        ));
     }
 
     /**
      * Solve the captcha
-     * @param $captcha_id the ID of the captcha
-     * @param $solution the solution provided by the user
-     * @return bool whether the answer is correct or nor
+     * @param int $captcha_id the ID of the captcha
+     * @param string $solution the solution provided by the user
+     * @param string $client_ip the IP of the requester
+     * @return bool whether the answer is correct or not
      * @throws YouHostingException
      */
-    public function checkCaptcha($captcha_id, $solution){
+    public function captchaSolve($captcha_id, $solution, $client_ip){
         $result = $this->post("/v1/captcha/".$captcha_id, array(
             'id' => $captcha_id,
             'solution' => $solution,
+            'client_ip' => $client_ip
         ));
 
         return $result->solved;
@@ -344,7 +353,7 @@ class YouHosting {
 
     /**
      * List the domains for which clients can create subdomains
-     * @return array
+     * @return array an assoc array of accountid=>domain
      * @throws YouHostingException
      */
     public function subdomains(){
@@ -353,7 +362,7 @@ class YouHosting {
 
     /**
      * List the plans for this reseller account
-     * @return array
+     * @return array with json objects containing id, name and type (paid/free)
      * @throws YouHostingException
      */
     public function plans(){
