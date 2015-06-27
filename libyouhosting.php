@@ -139,47 +139,12 @@ class YouHosting {
     /**
      * List all clients of the reseller
      *
-     * WARNING: the connection limiter may break this when used with a larger reseller account. I'm still looking for a way to work around this in a user friendly fashion.
-     * If you have any suggestions, send them to hans@grendelhosting.com
-     *
      * @param int $page (optional) if you don't want to start at page one (to resume a partially completed pull)
      * @return array an array of clients
      * @throws YouHostingException
      */
     public function clientList($page = 1){
-        //return $this->get("/v1/client/list?page=".$page);
-
-        $totalPages = PHP_INT_MAX;
-        $clients = array();
-
-        for($i = $page; $i <= $totalPages; $i++){
-            $data = $this->get("/v1/client/list?page=".$i);
-
-            $totalPages = $data->pages;
-
-            $clients = array_merge($clients, $data->list);
-        }
-
-        return $clients;
-    }
-
-    /**
-     * List all clients of the reseller
-     * This particular version uses a callable instead of collection a list and returning that
-     *
-     * @param callable $userFunction a function which can process an array of clients
-     * @throws YouHostingException
-     */
-    public function clientListCallable(callable $userFunction){
-        $totalPages = PHP_INT_MAX;
-
-        for($i = 1; $i <= $totalPages; $i++){
-            $data = $this->get("/v1/client/list?page=".$i);
-
-            $totalPages = $data->pages;
-
-            $userFunction($data->list);
-        }
+        return $this->get("/v1/client/list?page=".$page);
     }
 
     /**
